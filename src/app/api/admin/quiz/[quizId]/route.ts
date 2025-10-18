@@ -5,7 +5,7 @@ import { Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ quizId: string }> },
 ) {
   try {
@@ -15,7 +15,11 @@ export async function DELETE(
     if (authData?.user?.role !== Role.ADMIN) {
       return formatErrorResponse("Unauthorized", 401);
     }
+
+    // Await the params Promise
     const { quizId } = await params;
+
+    console.log("Deleting quiz question:", params);
 
     // First, check if the quiz exists
     const existingQuiz = await db.question.findUnique({
