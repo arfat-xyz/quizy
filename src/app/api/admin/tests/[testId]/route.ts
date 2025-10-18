@@ -7,7 +7,7 @@ import { NextRequest } from "next/server";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { testId: string } },
+  { params }: { params: Promise<{ testId: string }> },
 ) {
   try {
     const authData = await auth();
@@ -17,7 +17,7 @@ export async function DELETE(
       return formatErrorResponse("You're not authorized for this action", 401);
     }
 
-    const testId = params.testId;
+    const { testId } = await params;
 
     // First, check if the test exists
     const existingTest = await db.test.findUnique({

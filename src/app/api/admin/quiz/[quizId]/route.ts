@@ -2,12 +2,12 @@ import { formatErrorResponse } from "@/lib/api-response";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Role } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ quizId: string }> },
-) {
+): Promise<NextResponse> {
   try {
     const authData = await auth();
 

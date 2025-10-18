@@ -12,7 +12,7 @@ const DeleteTraineeSchema = z.object({
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authData = await auth();
@@ -22,7 +22,7 @@ export async function DELETE(
       return formatErrorResponse("You're not authorized for this action", 401);
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Validate trainee ID
     const validatedData = DeleteTraineeSchema.parse({ id });
