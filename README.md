@@ -1,6 +1,3 @@
-automatically show on table there for each trainee can be remove or send again
-credentials via email
-
 # Quizy
 
 A full-featured online quiz and assessment platform built with Next.js (App
@@ -162,11 +159,3 @@ a strong secret.
 - If Prisma client complains, run `npx prisma generate`.
 - If emails fail, verify `GMAIL_EMAIL`, `GMAIL_PASSWORD` (use an App Password
   for Gmail), and `NODEMAILER_FROM` values.
-
-## Contact
-
-If you need help, open an issue in the repository or contact the maintainers.
-
----
-
-Generated on: October 19, 2025
