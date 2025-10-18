@@ -1,9 +1,35 @@
+import HomeComponent from "@/components/feature/home/Home/HomeComponent";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { metaDataGeneratorForNormalPage } from "@/lib/generate-meta";
 
 export const metadata = metaDataGeneratorForNormalPage(
   "Home - Arfat",
   "Welcome to Arfat, your productivity companion.",
 );
+
+const authData = await auth();
+const allTestsForUser = await db.test.findMany({
+  where: {
+    assignedTests: {
+      some: {
+        userId: authData?.user?.id,
+      },
+    },
+  },
+  include: {
+    testSessions: {
+      where: {
+        userId: authData?.user?.id,
+      },
+    },
+  },
+});
+
 export default function Home() {
-  return <main className="">arfat</main>;
+  return (
+    <main className="">
+      <HomeComponent allTestsForUser={allTestsForUser || []} />
+    </main>
+  );
 }

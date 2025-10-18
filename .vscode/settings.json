@@ -141,5 +141,6 @@
   "code-runner.runInTerminal": true,
   "terminal.integrated.focusAfterRun": "terminal",
   "typescript.preferences.importModuleSpecifier": "non-relative",
-  "javascript.preferences.importModuleSpecifier": "non-relative"
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+  "WillLuke.nextjs.hasPrompted": true
 }
