@@ -32,6 +32,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import { formatDateTime, formatDuration } from "@/lib/utils";
 
 interface SubmittedSession extends UserTestSession {
   user: Pick<User, "id" | "name" | "email" | "userName">;
@@ -81,32 +82,6 @@ const ReviewTestComponent = ({
   //     day: "numeric",
   //   });
   // };
-
-  const formatDateTime = (date: Date) => {
-    return new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDuration = (startedAt: Date, endedAt: Date | null) => {
-    if (!endedAt) return "N/A";
-
-    const durationMs =
-      new Date(endedAt).getTime() - new Date(startedAt).getTime();
-    const durationMins = Math.floor(durationMs / 60000);
-
-    const hours = Math.floor(durationMins / 60);
-    const minutes = durationMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
 
   const getScoreVariant = (percentage: number) => {
     if (percentage >= 80) return "default";

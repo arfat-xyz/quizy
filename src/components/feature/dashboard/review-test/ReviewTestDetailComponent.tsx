@@ -1,12 +1,4 @@
 "use client";
-import {
-  UserTestSession,
-  User,
-  Test,
-  Position,
-  UserAnswer,
-  QuestionType,
-} from "@prisma/client";
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,50 +25,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import DecisionModal from "@/components/feature/dashboard/review-test/DecisionModal";
-
-interface TestSessionWithDetails extends UserTestSession {
-  user: Pick<User, "id" | "name" | "email" | "userName">;
-  test: Test & {
-    position: Position;
-    testGroups: {
-      group: {
-        name: string;
-        questions: {
-          id: string;
-          text: string;
-          type: QuestionType;
-          score: number;
-          correct: number[];
-          choices: {
-            id: string;
-            text: string;
-            index: number;
-          }[];
-        }[];
-      };
-    }[];
-  };
-  userAnswers: (UserAnswer & {
-    question: {
-      id: string;
-      text: string;
-      type: QuestionType;
-      score: number;
-      correct: number[];
-      choices: {
-        id: string;
-        text: string;
-        index: number;
-      }[];
-    };
-  })[];
-}
-
-interface ReviewTestDetailComponentProps {
-  testSession: TestSessionWithDetails;
-  totalPossibleScore: number;
-  currentStatus: string;
-}
+import { ReviewTestDetailComponentProps } from "@/components/feature/dashboard/review-test/interface";
+import { formatDateTime, formatDuration } from "@/lib/utils";
+import {
+  getMaxScoreForAnswer,
+  getPerformanceVariant,
+  getStatusVariant,
+} from "@/components/feature/dashboard/review-test/utils";
 
 const ReviewTestDetailComponent = ({
   testSession,
@@ -105,45 +60,14 @@ const ReviewTestDetailComponent = ({
     setScores(initialScores);
   }, [testSession.userAnswers]);
 
-  const formatDateTime = (date: Date) => {
-    return new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDuration = (startedAt: Date, endedAt: Date | null) => {
-    if (!endedAt) return "N/A";
-
-    const durationMs =
-      new Date(endedAt).getTime() - new Date(startedAt).getTime();
-    const durationMins = Math.floor(durationMs / 60000);
-
-    const hours = Math.floor(durationMins / 60);
-    const minutes = durationMins % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
   const handleScoreChange = (answerId: string, score: number) => {
-    const maxScore = getMaxScoreForAnswer(answerId);
+    const maxScore = getMaxScoreForAnswer(answerId, testSession);
     const newScore = Math.max(0, Math.min(score, maxScore));
 
     setScores(prev => ({
       ...prev,
       [answerId]: newScore,
     }));
-  };
-
-  const getMaxScoreForAnswer = (answerId: string) => {
-    const userAnswer = testSession.userAnswers.find(a => a.id === answerId);
-    return userAnswer?.question.score || 0;
   };
 
   const toggleEditScore = (answerId: string) => {
@@ -245,31 +169,11 @@ const ReviewTestDetailComponent = ({
       : 0;
   };
 
-  const getPerformanceVariant = (percentage: number) => {
-    if (percentage >= 80) return "default";
-    if (percentage >= 60) return "secondary";
-    if (percentage >= 40) return "outline";
-    return "destructive";
-  };
-
   const getPerformanceIcon = (percentage: number) => {
     if (percentage >= 80) return <TrendingUp className="h-4 w-4" />;
     if (percentage >= 60) return <CheckCircle className="h-4 w-4" />;
     if (percentage >= 40) return <TrendingDown className="h-4 w-4" />;
     return <XCircle className="h-4 w-4" />;
-  };
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return "default";
-      case "rejected":
-        return "destructive";
-      case "pending":
-        return "outline";
-      default:
-        return "secondary";
-    }
   };
 
   const getStatusIcon = (status: string) => {
