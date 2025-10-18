@@ -14,7 +14,7 @@ const CreateQuizSchema = z.object({
         text: z.string().min(1, "Question text is required"),
         type: z.nativeEnum(QuestionType),
         score: z.number().min(1, "Score must be at least 1"),
-        correct: z.number().optional(),
+        correct: z.array(z.number()).default([]), // Changed to array for multiple correct answers
         choices: z
           .array(
             z.object({
@@ -48,7 +48,6 @@ export async function POST(request: Request) {
     // Verify group exists
     const group = await db.group.findUnique({
       where: { id: groupId },
-      // include: { test: true },
     });
 
     if (!group) {
@@ -60,50 +59,71 @@ export async function POST(request: Request) {
       const createdQuestions = [];
 
       for (const questionData of questions) {
-        // Validate MCQ questions have correct answer and choices
+        // Validate MCQ questions have correct answers and choices
         if (questionData.type === QuestionType.MCQ) {
-          if (questionData.correct === undefined) {
-            throw new Error("MCQ questions must have a correct answer");
-          }
           if (!questionData.choices || questionData.choices.length < 2) {
             throw new Error("MCQ questions must have at least 2 choices");
           }
-          if (questionData.correct >= questionData.choices.length) {
-            throw new Error("Correct answer index is out of bounds");
+
+          // Validate at least one correct answer for MCQ
+          if (questionData.correct.length === 0) {
+            throw new Error(
+              "MCQ questions must have at least one correct answer",
+            );
+          }
+
+          // Validate correct answer indices are within bounds
+          const maxChoiceIndex = questionData.choices.length - 1;
+          const invalidCorrectIndices = questionData.correct.filter(
+            correctIndex => correctIndex < 0 || correctIndex > maxChoiceIndex,
+          );
+
+          if (invalidCorrectIndices.length > 0) {
+            throw new Error("Correct answer indices are out of bounds");
+          }
+
+          // Validate all choices have unique indices
+          const choiceIndices = questionData.choices.map(
+            choice => choice.index,
+          );
+          const uniqueIndices = new Set(choiceIndices);
+          if (uniqueIndices.size !== choiceIndices.length) {
+            throw new Error("Choice indices must be unique");
           }
         }
 
-        // Validate TEXT questions don't have choices or correct answer
+        // Validate TEXT questions don't have choices or correct answers
         if (questionData.type === QuestionType.TEXT) {
           if (questionData.choices && questionData.choices.length > 0) {
             throw new Error("TEXT questions should not have choices");
           }
-          if (questionData.correct !== undefined) {
-            throw new Error("TEXT questions should not have a correct answer");
+          if (questionData.correct.length > 0) {
+            throw new Error("TEXT questions should not have correct answers");
           }
         }
 
-        // Create the question
+        // Create the question with correct as an array
         const question = await tx.question.create({
           data: {
             text: questionData.text,
             type: questionData.type,
             score: questionData.score,
-            correct:
-              questionData.type === QuestionType.MCQ
-                ? questionData.correct
-                : null,
+            correct: questionData.correct, // Now storing as array
             groupId: groupId,
             choices: {
               create:
-                questionData.choices?.map(choice => ({
-                  text: choice.text,
-                  index: choice.index,
-                })) || [],
+                questionData.type === QuestionType.MCQ
+                  ? questionData.choices?.map(choice => ({
+                      text: choice.text,
+                      index: choice.index,
+                    })) || []
+                  : [],
             },
           },
           include: {
-            choices: true,
+            choices: {
+              orderBy: { index: "asc" },
+            },
           },
         });
 
@@ -136,7 +156,10 @@ export async function POST(request: Request) {
 
     if (
       error instanceof Error &&
-      error.message.includes("MCQ questions must have")
+      (error.message.includes("MCQ questions must have") ||
+        error.message.includes("Correct answer indices") ||
+        error.message.includes("TEXT questions should not") ||
+        error.message.includes("Choice indices must be unique"))
     ) {
       return formatErrorResponse(error.message, 400);
     }
@@ -170,11 +193,10 @@ export async function GET(request: Request) {
           orderBy: { index: "asc" },
         },
         group: {
-          // include: {
-          //   test: {
-          //     select: { name: true },
-          //   },
-          // },
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
       orderBy: { createdAt: "desc" },

@@ -40,14 +40,17 @@ const QuizPage = async ({
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <QuizComponent
-      quizzes={quizzes}
-      allPositions={allPositions}
-      allGroups={allGroups}
-      currentPage={page}
-      totalPages={totalPages}
-      totalCount={totalCount}
-    />
+    <>
+      {" "}
+      <QuizComponent
+        quizzes={quizzes}
+        allPositions={allPositions}
+        allGroups={allGroups}
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+      />
+    </>
   );
 };
 

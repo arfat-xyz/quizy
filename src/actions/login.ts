@@ -20,7 +20,10 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
   // Check if user exists by email or username
   const userExists = await db.user.findFirst({
     where: {
-      OR: [{ email: identifier.toLowerCase() }, { userName: identifier }],
+      OR: [
+        { email: identifier.trim().toLowerCase() },
+        { userName: identifier.trim() },
+      ],
     },
   });
 

@@ -20,7 +20,7 @@ interface Question {
   text: string;
   type: QuestionType;
   score: number;
-  correct?: number; // For MCQ questions
+  correct: number[]; // Now an array for multiple correct answers
   choices: Choice[];
 }
 
@@ -32,7 +32,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
       text: "",
       type: QuestionType.MCQ,
       score: 1,
-      correct: 0,
+      correct: [], // Start with empty array
       choices: [{ text: "", index: 0 }],
     },
   ]);
@@ -44,7 +44,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
         text: "",
         type: QuestionType.MCQ,
         score: 1,
-        correct: 0,
+        correct: [],
         choices: [{ text: "", index: 0 }],
       },
     ]);
@@ -59,10 +59,10 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
 
-    // If changing to TEXT type, clear choices and correct answer
+    // If changing to TEXT type, clear choices and correct answers
     if (field === "type" && value === QuestionType.TEXT) {
       updatedQuestions[index].choices = [];
-      updatedQuestions[index].correct = undefined;
+      updatedQuestions[index].correct = [];
     }
 
     // If changing to MCQ type and no choices, add one default choice
@@ -72,7 +72,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
       updatedQuestions[index].choices.length === 0
     ) {
       updatedQuestions[index].choices = [{ text: "", index: 0 }];
-      updatedQuestions[index].correct = 0;
+      updatedQuestions[index].correct = [];
     }
 
     setQuestions(updatedQuestions);
@@ -106,12 +106,33 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
       choice.index = index;
     });
 
-    // Update correct answer if it was the removed choice
-    if (updatedQuestions[questionIndex].correct === choiceIndex) {
-      updatedQuestions[questionIndex].correct = 0;
-    } else if ((updatedQuestions[questionIndex].correct || 0) > choiceIndex) {
-      updatedQuestions[questionIndex].correct =
-        (updatedQuestions[questionIndex].correct || 0) - 1;
+    // Remove the deleted choice from correct answers and adjust indexes
+    const updatedCorrect = updatedQuestions[questionIndex].correct
+      .filter(correctIndex => correctIndex !== choiceIndex)
+      .map(correctIndex =>
+        correctIndex > choiceIndex ? correctIndex - 1 : correctIndex,
+      );
+
+    updatedQuestions[questionIndex].correct = updatedCorrect;
+
+    setQuestions(updatedQuestions);
+  };
+
+  const toggleCorrectAnswer = (questionIndex: number, choiceIndex: number) => {
+    const updatedQuestions = [...questions];
+    const currentCorrect = updatedQuestions[questionIndex].correct;
+
+    if (currentCorrect.includes(choiceIndex)) {
+      // Remove from correct answers
+      updatedQuestions[questionIndex].correct = currentCorrect.filter(
+        index => index !== choiceIndex,
+      );
+    } else {
+      // Add to correct answers
+      updatedQuestions[questionIndex].correct = [
+        ...currentCorrect,
+        choiceIndex,
+      ];
     }
 
     setQuestions(updatedQuestions);
@@ -119,9 +140,43 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
 
   const handleSubmit = async () => {
     if (!selectedGroup) {
-      toast("Please select a group");
+      toast.error("Please select a group");
       return;
     }
+
+    // Validate questions
+    for (const [index, question] of questions.entries()) {
+      if (!question.text.trim()) {
+        toast.error(`Question ${index + 1} text is required`);
+        return;
+      }
+
+      if (question.type === QuestionType.MCQ) {
+        if (question.choices.length < 2) {
+          toast.error(`Question ${index + 1} must have at least 2 choices`);
+          return;
+        }
+
+        // Check if all choices have text
+        for (const [choiceIndex, choice] of question.choices.entries()) {
+          if (!choice.text.trim()) {
+            toast.error(
+              `Question ${index + 1}, Choice ${choiceIndex + 1} text is required`,
+            );
+            return;
+          }
+        }
+
+        // Check if at least one correct answer is selected
+        if (question.correct.length === 0) {
+          toast.error(
+            `Question ${index + 1} must have at least one correct answer`,
+          );
+          return;
+        }
+      }
+    }
+    console.log("Questions:", questions);
 
     try {
       const response = await fetch("/api/admin/create-quiz", {
@@ -138,6 +193,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("Quiz created:", result);
+        toast.success("Quiz created successfully!");
         setIsOpen(false);
         // Reset form
         setSelectedGroup("");
@@ -146,7 +202,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
             text: "",
             type: QuestionType.MCQ,
             score: 1,
-            correct: 0,
+            correct: [],
             choices: [{ text: "", index: 0 }],
           },
         ]);
@@ -155,7 +211,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
       }
     } catch (error) {
       console.error("Error creating quiz:", error);
-      alert("Error creating quiz");
+      toast.error("Error creating quiz");
     }
   };
 
@@ -167,7 +223,8 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
           <DialogHeader>
             <DialogTitle>Create New Quiz</DialogTitle>
             <DialogDescription>
-              Add questions to create a quiz for the selected group.
+              Add questions to create a quiz for the selected group. For MCQ
+              questions, you can select multiple correct answers.
             </DialogDescription>
           </DialogHeader>
 
@@ -271,7 +328,7 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="block text-sm font-medium">
-                        Choices
+                        Choices (Select multiple correct answers)
                       </label>
                       <Button
                         type="button"
@@ -284,7 +341,8 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                     </div>
 
                     <div className="text-sm font-medium text-gray-700">
-                      Select Correct Answer
+                      Select all correct answers ({question.correct.length}{" "}
+                      selected)
                     </div>
 
                     {question.choices.map((choice, choiceIndex) => (
@@ -293,15 +351,10 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                         className="flex items-center space-x-2"
                       >
                         <input
-                          type="radio"
-                          name={`correct-${questionIndex}`}
-                          checked={question.correct === choiceIndex}
+                          type="checkbox"
+                          checked={question.correct.includes(choiceIndex)}
                           onChange={() =>
-                            updateQuestion(
-                              questionIndex,
-                              "correct",
-                              choiceIndex,
-                            )
+                            toggleCorrectAnswer(questionIndex, choiceIndex)
                           }
                           className="mr-2"
                         />

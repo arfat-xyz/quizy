@@ -184,7 +184,7 @@ model Question {
   text          String
   type          QuestionType
   score         Int
-  correct       Int? // MCQ only
+  correct       Int[]          @default([]) // Now an array for multiple correct answers
   choices       Choice[]
   userAnswers   UserAnswer[]
   testQuestions TestQuestion[]
