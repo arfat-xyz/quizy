@@ -17,7 +17,6 @@ const ReviewTestDetailComponent = ({
   const router = useRouter();
   const [status, setStatus] = useState(currentStatus);
   const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
-
   const {
     scores,
     editingScores,
@@ -64,7 +63,6 @@ const ReviewTestDetailComponent = ({
     a => a.question.type === "TEXT",
   );
   const hasTextAnswers = textAnswers.length > 0;
-
   return (
     <div className="bg-background min-h-screen py-8">
       <div className="container mx-auto max-w-6xl px-4">

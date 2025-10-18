@@ -26,7 +26,6 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
       ],
     },
   });
-
   // If user doesn't exist or doesn't have a password/email, return an error
   if (!userExists || !userExists.password || !userExists.email) {
     return { error: "User not found or invalid credentials" };

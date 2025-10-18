@@ -1,0 +1,103 @@
+"use client";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+interface DeleteQuizButtonProps {
+  quizId: string;
+  quizText: string;
+}
+
+const DeleteQuizButton = ({ quizId, quizText }: DeleteQuizButtonProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+
+      const response = await fetch(`/api/admin/quiz/${quizId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Quiz deleted successfully!");
+        router.refresh();
+        setIsOpen(false);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete quiz");
+      }
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error deleting quiz",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <Button variant="destructive" size="sm" onClick={() => setIsOpen(true)}>
+        Delete
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Quiz Question</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this question? This action cannot
+              be undone.
+              <br />
+              <br />
+              <strong>Question:</strong> {quizText}
+              <br />
+              <br />
+              This will also delete all associated:
+              <ul className="mt-2 list-inside list-disc space-y-1">
+                <li>Choices</li>
+                <li>User answers</li>
+                <li>Test question references</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Question"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default DeleteQuizButton;

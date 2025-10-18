@@ -150,7 +150,7 @@ const TestSessionComponent = ({ testSession }: TestSessionComponentProps) => {
     setTextAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const saveAnswer = async (questionId: string) => {
+  const saveAnswer = async (questionId: string, isAutoSave = false) => {
     try {
       const answer =
         currentQuestion.type === "MCQ"
@@ -166,6 +166,7 @@ const TestSessionComponent = ({ testSession }: TestSessionComponentProps) => {
           sessionId: testSession.id,
           questionId,
           response: answer,
+          isAutoSave,
         }),
       });
     } catch (error) {
@@ -176,9 +177,9 @@ const TestSessionComponent = ({ testSession }: TestSessionComponentProps) => {
   const handleSubmitTest = async () => {
     try {
       // Save all answers first
-      for (const question of allQuestions) {
-        await saveAnswer(question.id);
-      }
+      // for (const question of allQuestions) {
+      //   await saveAnswer(question.id, true);
+      // }
 
       // Submit the test
       const response = await fetch("/api/test/session/submit", {
@@ -524,7 +525,7 @@ const TestSessionComponent = ({ testSession }: TestSessionComponentProps) => {
                           <div className="space-y-3">
                             <div>
                               <h4 className="mb-2 font-medium">Your Answer:</h4>
-                              <div className="rounded-lg border bg-gray-50 p-3">
+                              <div className="rounded-lg border bg-gray-50 p-3 break-words">
                                 {userAnswer.response || "No answer provided"}
                               </div>
                             </div>

@@ -1,21 +1,16 @@
 import ReviewTestComponent from "@/components/feature/dashboard/review/ReviewTestComponent";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Role } from "@prisma/client";
-import { redirect } from "next/navigation";
-
+import { metaDataGeneratorForNormalPage } from "@/lib/generate-meta";
+export const metadata = metaDataGeneratorForNormalPage(
+  "Review Test - Arfat",
+  "Your Productivity Dashboard on Arfat.",
+);
 const ReviewTestPage = async ({
   searchParams,
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {
   const allParams = await searchParams;
-  const authData = await auth();
-
-  // Check if user is admin
-  if (authData?.user?.role !== Role.ADMIN) {
-    redirect("/unauthorized");
-  }
 
   const page = Number(allParams?.page) || 1;
   const limit = Number(allParams?.limit) || 10;

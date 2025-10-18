@@ -68,7 +68,6 @@ const ReviewTestDetailPage = async ({ params }: ReviewTestDetailPageProps) => {
       },
     },
   });
-
   if (!testSession) {
     notFound();
   }

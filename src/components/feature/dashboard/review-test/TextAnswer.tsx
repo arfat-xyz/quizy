@@ -27,7 +27,7 @@ const TextAnswer = ({
           {`Candidate's Answer:`}
         </h4>
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <p className="whitespace-pre-wrap text-gray-700">
+          <p className="break-words whitespace-pre-wrap text-gray-700">
             {userAnswer.response || (
               <span className="text-gray-500 italic">No answer provided</span>
             )}

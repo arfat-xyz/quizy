@@ -40,7 +40,6 @@ export const {
             email,
           },
         });
-
         if (!user?.id || !user.password || !user.email) {
           return null;
         }

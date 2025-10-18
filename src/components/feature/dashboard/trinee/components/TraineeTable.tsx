@@ -9,19 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { MoreHorizontal, Edit, Trash2, Eye, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import GlobalPagination from "@/components/shared/GlobalPagination";
+import { formatDate } from "@/components/feature/dashboard/trinee/utils";
 import { User } from "@prisma/client";
-import GlobalPagination from "@/components/shared/GlobalPagination"; // Adjust import path as needed
-import { format } from "date-fns";
+import TraineeTableActions from "./TraineeTableActions";
+import TraineeUsernameBadge from "./TraineeUsernameBadge";
 
 interface TraineeTableProps {
   trainees: Partial<User>[];
@@ -42,33 +36,6 @@ const TraineeTable = ({
   onPageChange,
   onLimitChange,
 }: TraineeTableProps) => {
-  const formatDate = (date: Date) => {
-    return format(new Date(date), "MMM dd, yyyy");
-  };
-
-  const handleDelete = async (traineeId: string) => {
-    if (confirm("Are you sure you want to delete this trainee?")) {
-      try {
-        const response = await fetch(`/api/admin/trainee/${traineeId}`, {
-          method: "DELETE",
-        });
-
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          alert("Failed to delete trainee");
-        }
-      } catch (error) {
-        console.error("Error deleting trainee:", error);
-        alert("Error deleting trainee");
-      }
-    }
-  };
-
-  const handleSendEmail = (email: string) => {
-    window.location.href = `mailto:${email}`;
-  };
-
   return (
     <Card>
       <CardContent className="p-0">
@@ -93,7 +60,6 @@ const TraineeTable = ({
               <TableHead>Email</TableHead>
               <TableHead>Username</TableHead>
               <TableHead>Created Date</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -110,51 +76,25 @@ const TraineeTable = ({
             ) : (
               trainees.map(trainee => (
                 <TableRow key={trainee.id}>
-                  <TableCell className="font-medium">{trainee.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {trainee.name || "N/A"}
+                  </TableCell>
                   <TableCell>{trainee.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="font-mono">
-                      {trainee.userName}
-                    </Badge>
+                    <TraineeUsernameBadge
+                      username={trainee.userName || "N/A"}
+                    />
                   </TableCell>
                   <TableCell>
                     {trainee.createdAt ? formatDate(trainee.createdAt) : "N/A"}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="success">Active</Badge>
-                  </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleSendEmail(trainee.email!)}
-                        >
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send Email
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDelete(trainee.id!)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <TraineeTableActions
+                      traineeId={trainee.id!}
+                      email={trainee.email!}
+                      name={trainee.name || ""}
+                      userName={trainee.userName || ""}
+                    />
                   </TableCell>
                 </TableRow>
               ))

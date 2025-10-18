@@ -3,6 +3,14 @@ import { formatErrorResponse, formatResponse } from "@/lib/api-response";
 import { db } from "@/lib/db";
 import { Role } from "@prisma/client";
 import { auth } from "@/lib/auth";
+import { z } from "zod";
+
+// Zod schema for single answer validation
+const EvaluateAnswerSchema = z.object({
+  answerId: z.string().min(1, "Answer ID is required"),
+  score: z.number().min(0, "Score must be a non-negative number"),
+  note: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
@@ -14,10 +22,37 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { answerId, score } = body;
 
-    if (!answerId || score === undefined) {
-      return formatErrorResponse("Answer ID and score are required", 400);
+    // Validate request body
+    const validatedData = EvaluateAnswerSchema.parse(body);
+    const { answerId, score } = validatedData;
+
+    // Verify answer exists and belongs to a submitted session
+    const answer = await db.userAnswer.findUnique({
+      where: { id: answerId },
+      include: {
+        question: true,
+        testSession: true,
+      },
+    });
+
+    if (!answer) {
+      return formatErrorResponse("Answer not found", 404);
+    }
+
+    if (!answer.testSession.submitted) {
+      return formatErrorResponse(
+        "Cannot evaluate answers for unsubmitted sessions",
+        400,
+      );
+    }
+
+    // Validate score limit
+    if (score > answer.question.score) {
+      return formatErrorResponse(
+        `Score exceeds maximum allowed (${answer.question.score})`,
+        400,
+      );
     }
 
     // Update the answer score
@@ -25,12 +60,15 @@ export async function POST(request: Request) {
       where: { id: answerId },
       data: {
         givenScore: Number(score),
-        // Note: If you want to store notes, you'll need to add a note field to UserAnswer model
       },
       include: {
         testSession: {
           include: {
-            userAnswers: true,
+            userAnswers: {
+              include: {
+                question: true,
+              },
+            },
           },
         },
       },
@@ -69,6 +107,7 @@ export async function POST(request: Request) {
     return formatResponse(updatedAnswer, "Score updated successfully");
   } catch (error) {
     console.error("Error evaluating answer:", error);
+
     return routeErrorHandler(error);
   }
 }

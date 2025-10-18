@@ -10,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye } from "lucide-react";
 import { TestWithPosition } from "@/components/feature/dashboard/test/interface";
+import { formatDate } from "@/components/feature/dashboard/trinee/utils";
+import DeleteTestButton from "@/components/feature/dashboard/test/components/DeleteTestButton";
 
 const TestTable = ({
   tests,
@@ -26,10 +26,6 @@ const TestTable = ({
   totalPages: number;
   totalCount: number;
 }) => {
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString();
-  };
-
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
@@ -66,19 +62,7 @@ const TestTable = ({
                   <TableCell>{test._count?.assignedTests || 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <DeleteTestButton testId={test.id} testName={test.name} />
                     </div>
                   </TableCell>
                 </TableRow>

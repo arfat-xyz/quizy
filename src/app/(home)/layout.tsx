@@ -23,6 +23,7 @@ export default async function HomeLayout({
             name: session?.user?.name as string,
             email: session?.user?.email as string,
             avatar: session?.user?.image as string,
+            role: session?.user?.role as string,
           }}
         />
       ) : (

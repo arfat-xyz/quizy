@@ -1,6 +1,5 @@
 "use client";
 import AddGroup from "@/components/feature/dashboard/quiz/components/AddGroup";
-import AddPosition from "@/components/feature/dashboard/quiz/components/AddPosition";
 import AddQuiz from "@/components/feature/dashboard/quiz/components/AddQuiz";
 import QuizTable from "@/components/feature/dashboard/quiz/components/QuizTable";
 import { Choice, Group, Position, Question } from "@prisma/client";
@@ -27,10 +26,11 @@ const QuizComponent = ({
 }) => {
   return (
     <div>
-      <AddPosition />
       {/* <CreateTestAndGroup allPositions={allPositions} /> */}
-      <AddGroup />
-      <AddQuiz allGroups={allGroups} />
+      <div className="my-2.5 flex w-full justify-end gap-2">
+        <AddGroup />
+        <AddQuiz allGroups={allGroups} />
+      </div>
       <QuizTable
         quizzes={quizzes}
         currentPage={currentPage}

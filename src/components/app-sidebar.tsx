@@ -1,20 +1,10 @@
 "use client";
 
 import * as React from "react";
-import {
-  CircleQuestionMark,
-  Frame,
-  LifeBuoy,
-  Map,
-  PaperclipIcon,
-  PieChart,
-  SettingsIcon,
-  User2,
-} from "lucide-react";
+import { CircleQuestionMark, PaperclipIcon, User2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -41,11 +31,11 @@ const staticData = {
     //     },
     //   ],
     // },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: SettingsIcon,
-    },
+    // {
+    //   title: "Settings",
+    //   url: "/dashboard/settings",
+    //   icon: SettingsIcon,
+    // },
     {
       title: "Trainee",
       url: "/dashboard/trainee",
@@ -65,30 +55,6 @@ const staticData = {
       title: "Review Test",
       url: "/dashboard/review-test",
       icon: PaperclipIcon,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
     },
   ],
 };
@@ -135,8 +101,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={staticData.navMain} />
-        {/* <NavProjects projects={staticData.projects} /> */}
-        <NavSecondary items={staticData.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={dynamicUserData.user} />
