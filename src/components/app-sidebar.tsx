@@ -61,6 +61,11 @@ const staticData = {
       url: "/dashboard/test",
       icon: PaperclipIcon,
     },
+    {
+      title: "Review Test",
+      url: "/dashboard/review-test",
+      icon: PaperclipIcon,
+    },
   ],
   navSecondary: [
     {

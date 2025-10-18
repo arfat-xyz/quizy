@@ -8,25 +8,33 @@ export const metadata = metaDataGeneratorForNormalPage(
   "Welcome to Arfat, your productivity companion.",
 );
 
-const authData = await auth();
-const allTestsForUser = await db.test.findMany({
-  where: {
-    assignedTests: {
-      some: {
-        userId: authData?.user?.id,
-      },
-    },
-  },
-  include: {
-    testSessions: {
-      where: {
-        userId: authData?.user?.id,
-      },
-    },
-  },
-});
+export default async function Home() {
+  const authData = await auth();
+  if (!authData?.user?.id) {
+    return (
+      <main className="">
+        <HomeComponent allTestsForUser={[]} />
+      </main>
+    );
+  }
 
-export default function Home() {
+  const allTestsForUser = await db.test.findMany({
+    where: {
+      assignedTests: {
+        some: {
+          userId: authData?.user?.id,
+        },
+      },
+    },
+    include: {
+      testSessions: {
+        where: {
+          userId: authData?.user?.id,
+        },
+      },
+    },
+  });
+
   return (
     <main className="">
       <HomeComponent allTestsForUser={allTestsForUser || []} />

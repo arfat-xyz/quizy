@@ -20,6 +20,9 @@ export function routeErrorHandler(error: unknown) {
     if (error.code === "P2002") {
       return formatErrorResponse("Feature request conflict error.", 409);
     }
+    if (error.code === "P2025") {
+      return formatErrorResponse("Feature request not found error.", 404);
+    }
   } else if (error instanceof Error) {
     return formatErrorResponse(error.message, 500);
   } else {

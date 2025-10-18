@@ -635,8 +635,8 @@ export function generateTestAssignmentEmail(
   durationMin: number,
   testId: string,
 ) {
-  const testLink = `${process.env.NEXT_PUBLIC_BASE_URL}/test/${testId}`;
-  const loginLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`;
+  const testLink = `${env.NEXT_PUBLIC_BASE_URL}/test/${testId}`;
+  const loginLink = `${env.NEXT_PUBLIC_BASE_URL}/auth/login`;
 
   const formattedDate = new Date(testDate).toLocaleDateString("en-US", {
     weekday: "long",
@@ -879,5 +879,141 @@ export function generateTestAssignmentEmail(
 			</div>
 		</div>
 	</body>
+</html>`;
+}
+export function generateDecisionEmail(
+  username: string,
+  testName: string,
+  positionName: string,
+  decision: "accepted" | "rejected" | "pending",
+  adminName: string,
+) {
+  const decisionText =
+    decision === "accepted"
+      ? "Congratulations! You have been accepted"
+      : decision === "rejected"
+        ? "We regret to inform you that you have not been selected"
+        : "Your application is still under review";
+
+  const decisionColor =
+    decision === "accepted"
+      ? "#10B981"
+      : decision === "rejected"
+        ? "#EF4444"
+        : "#F59E0B";
+
+  const decisionIcon =
+    decision === "accepted" ? "🎉" : decision === "rejected" ? "❌" : "⏳";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Result Update</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .decision-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: ${decisionColor};
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .test-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 2px solid #f0f0f0;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #3B82F6;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Test Result Update</h1>
+    </div>
+    
+    <div class="content">
+        <h2>Hello ${username},</h2>
+        
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin: 20px 0;">${decisionIcon}</div>
+            <div class="decision-badge">
+                ${decisionText}
+            </div>
+        </div>
+
+        <div class="test-info">
+            <h3>Test Details:</h3>
+            <p><strong>Test Name:</strong> ${testName}</p>
+            <p><strong>Position:</strong> ${positionName}</p>
+            <p><strong>Reviewed by:</strong> ${adminName}</p>
+            <p><strong>Decision:</strong> ${decision.charAt(0).toUpperCase() + decision.slice(1)}</p>
+        </div>
+
+        ${
+          decision === "accepted"
+            ? `
+        <div style="text-align: center; margin: 30px 0;">
+            <p>Congratulations on your achievement! Our team will contact you shortly with the next steps.</p>
+            <a href="${env.NEXT_PUBLIC_BASE_URL}/dashboard" class="button">View Dashboard</a>
+        </div>
+        `
+            : decision === "rejected"
+              ? `
+        <div style="text-align: center; margin: 30px 0;">
+            <p>Thank you for your time and effort. We encourage you to apply for future opportunities that match your skills and experience.</p>
+            <a href="${env.NEXT_PUBLIC_BASE_URL}/" class="button">Return to Platform</a>
+        </div>
+        `
+              : `
+        <div style="text-align: center; margin: 30px 0;">
+            <p>Your application is still being reviewed. We will notify you as soon as a decision is made.</p>
+            <a href="${env.NEXT_PUBLIC_BASE_URL}/dashboard" class="button">Check Status</a>
+        </div>
+        `
+        }
+
+        <p>If you have any questions, please don't hesitate to contact our support team.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Best regards,<br>The Assessment Team</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</body>
 </html>`;
 }

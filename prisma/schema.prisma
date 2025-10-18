@@ -159,10 +159,13 @@ model AssignedTest {
   test            Test     @relation(fields: [testId], references: [id])
   testId          String   @db.ObjectId
   assignedAt      DateTime @default(now())
+  status          String   @default("pending")
   loginToken      String?
   credentialsSent Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@unique([userId, testId])
 }
 
 model UserTestSession {

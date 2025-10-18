@@ -209,7 +209,7 @@ const HomeComponent = ({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-start">
                           {hasSubmitted ? (
                             <Link
                               href={`/test/session/${getLatestSession(test)?.id}`}
