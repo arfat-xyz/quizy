@@ -1,5 +1,8 @@
+// types.ts
 import {
+  Choice,
   Position,
+  Question,
   QuestionType,
   Test,
   User,
@@ -44,8 +47,31 @@ export interface TestSessionWithDetails extends UserTestSession {
     };
   })[];
 }
+
+// Extended Question type with all required properties
+export type QuestionWithChoices = Question & {
+  choices: Choice[];
+};
+
+export type UserAnswerWithQuestion = UserAnswer & {
+  question: QuestionWithChoices;
+};
+
+// Single interface declaration for ReviewTestDetailComponentProps
 export interface ReviewTestDetailComponentProps {
   testSession: TestSessionWithDetails;
   totalPossibleScore: number;
   currentStatus: string;
+}
+
+export interface ScoreManagementProps {
+  scores: Record<string, number>;
+  editingScores: Record<string, boolean>;
+  isSaving: boolean;
+  handleScoreChange: (answerId: string, score: number) => void;
+  toggleEditScore: (answerId: string) => void;
+  saveScore: (answerId: string) => Promise<void>;
+  saveAllScores: () => Promise<void>;
+  getTotalScore: () => number;
+  getAchievedPercentage: () => number;
 }
