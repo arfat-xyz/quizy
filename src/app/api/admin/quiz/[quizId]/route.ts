@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { quizId: string } },
+  { params }: { params: Promise<{ quizId: string }> },
 ) {
   try {
     const authData = await auth();
@@ -15,7 +15,7 @@ export async function DELETE(
     if (authData?.user?.role !== Role.ADMIN) {
       return formatErrorResponse("Unauthorized", 401);
     }
-    const quizId = params.quizId;
+    const { quizId } = await params;
 
     // First, check if the quiz exists
     const existingQuiz = await db.question.findUnique({
