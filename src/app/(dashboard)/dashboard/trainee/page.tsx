@@ -15,7 +15,7 @@ const TraineePage = async ({
 }) => {
   const allParams = await searchParams;
   const page = Number(allParams?.page) || 1;
-  const limit = Number(allParams?.limit) || 5;
+  const limit = Number(allParams?.limit) || 10;
   const skip = (page - 1) * limit;
 
   // Get trainees with pagination
@@ -52,6 +52,7 @@ const TraineePage = async ({
       totalPages={totalPages}
       currentPage={page}
       totalCount={totalCount}
+      limit={limit}
     />
   );
 };

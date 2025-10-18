@@ -9,6 +9,7 @@ interface TraineeComponentProps {
   totalPages: number;
   currentPage: number;
   totalCount: number;
+  limit: number;
 }
 
 const TraineeComponent = ({
@@ -16,6 +17,7 @@ const TraineeComponent = ({
   totalPages,
   currentPage,
   totalCount,
+  limit,
 }: TraineeComponentProps) => {
   return (
     <div className="space-y-6">
@@ -25,6 +27,7 @@ const TraineeComponent = ({
       </div>
       <TraineeTable
         trainees={trainees}
+        limit={limit}
         totalPages={totalPages}
         currentPage={currentPage}
         totalCount={totalCount}

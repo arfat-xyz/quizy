@@ -1,4 +1,4 @@
-// components/feature/dashboard/trinee/components/TraineeTable.tsx
+// components/feature/dashboard/trainee/components/TraineeTable.tsx
 "use client";
 
 import {
@@ -18,17 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  Mail,
-} from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Eye, Mail } from "lucide-react";
 import { User } from "@prisma/client";
-import Link from "next/link";
+import GlobalPagination from "@/components/shared/GlobalPagination"; // Adjust import path as needed
 import { format } from "date-fns";
 
 interface TraineeTableProps {
@@ -36,6 +28,9 @@ interface TraineeTableProps {
   totalPages: number;
   currentPage: number;
   totalCount: number;
+  limit: number;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
 }
 
 const TraineeTable = ({
@@ -43,6 +38,9 @@ const TraineeTable = ({
   totalPages,
   currentPage,
   totalCount,
+  limit,
+  onPageChange,
+  onLimitChange,
 }: TraineeTableProps) => {
   const formatDate = (date: Date) => {
     return format(new Date(date), "MMM dd, yyyy");
@@ -75,9 +73,16 @@ const TraineeTable = ({
     <Card>
       <CardContent className="p-0">
         <div className="border-b p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <h2 className="text-lg font-semibold">Trainees</h2>
-            <Badge variant="secondary">Total: {totalCount}</Badge>
+            <div className="flex items-center gap-4">
+              <Badge variant="secondary">Total: {totalCount}</Badge>
+              <div className="text-muted-foreground text-sm">
+                Showing {(currentPage - 1) * limit + 1} to{" "}
+                {Math.min(currentPage * limit, totalCount)} of {totalCount}{" "}
+                trainees
+              </div>
+            </div>
           </div>
         </div>
 
@@ -157,54 +162,18 @@ const TraineeTable = ({
           </TableBody>
         </Table>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t px-4 py-4">
-            <div className="text-muted-foreground text-sm">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                asChild={currentPage > 1}
-              >
-                {currentPage > 1 ? (
-                  <Link
-                    href={`/dashboard/trainee?page=${currentPage - 1}&limit=10`}
-                  >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
-                  </Link>
-                ) : (
-                  <span>
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                asChild={currentPage < totalPages}
-              >
-                {currentPage < totalPages ? (
-                  <Link
-                    href={`/dashboard/trainee?page=${currentPage + 1}&limit=10`}
-                  >
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Link>
-                ) : (
-                  <span>
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </span>
-                )}
-              </Button>
-            </div>
+        {/* Global Pagination */}
+        {totalPages > 0 && (
+          <div className="border-t p-4">
+            <GlobalPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              limit={limit}
+              limits={[1, 2, 3, 4, 5, 6, 10, 25, 50, 100]}
+              onPageChange={onPageChange}
+              onLimitChange={onLimitChange}
+              updateUrl={true}
+            />
           </div>
         )}
       </CardContent>
