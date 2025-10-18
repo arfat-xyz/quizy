@@ -19,8 +19,8 @@ const QuizComponent = ({
     group: Group;
     choices: Choice[];
   })[];
-  limit: number;
   allGroups: Group[];
+  limit: number;
   currentPage: number;
   totalPages: number;
   totalCount: number;
@@ -32,8 +32,8 @@ const QuizComponent = ({
       <AddGroup />
       <AddQuiz allGroups={allGroups} />
       <QuizTable
-        currentPage={currentPage}
         quizzes={quizzes}
+        currentPage={currentPage}
         totalCount={totalCount}
         totalPages={totalPages}
         limit={limit}

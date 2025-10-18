@@ -111,9 +111,11 @@ model PasswordResetToken {
 }
 
 model Position {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String @unique
-  tests Test[]
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  tests     Test[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Group {
@@ -121,6 +123,8 @@ model Group {
   name       String      @unique
   questions  Question[]
   testGroups TestGroup[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model Test {
@@ -134,15 +138,18 @@ model Test {
   assignedTests AssignedTest[]
   testSessions  UserTestSession[]
   TestQuestion  TestQuestion[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model TestGroup {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  testId  String @db.ObjectId
-  groupId String @db.ObjectId
-  order   Int
-  test    Test   @relation(fields: [testId], references: [id])
-  group   Group  @relation(fields: [groupId], references: [id])
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  testId    String   @db.ObjectId
+  groupId   String   @db.ObjectId
+  test      Test     @relation(fields: [testId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AssignedTest {
@@ -154,6 +161,8 @@ model AssignedTest {
   assignedAt      DateTime @default(now())
   loginToken      String?
   credentialsSent Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model UserTestSession {
@@ -167,6 +176,8 @@ model UserTestSession {
   submitted   Boolean      @default(false)
   totalScore  Float        @default(0)
   userAnswers UserAnswer[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // model Group {
@@ -189,6 +200,7 @@ model Question {
   userAnswers   UserAnswer[]
   testQuestions TestQuestion[]
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model TestQuestion {
@@ -198,6 +210,8 @@ model TestQuestion {
   question   Question @relation(fields: [questionId], references: [id])
   questionId String   @db.ObjectId
   order      Int // Optional: order in test
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Choice {
@@ -206,6 +220,8 @@ model Choice {
   question   Question @relation(fields: [questionId], references: [id])
   questionId String   @db.ObjectId
   index      Int // Unique index to match against correct answer
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model UserAnswer {
@@ -217,4 +233,6 @@ model UserAnswer {
   response      String // For MCQ: choice index as string; for TEXT: answer
   autoScore     Float? // For MCQ
   givenScore    Float? // For TEXT (manual evaluation)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }

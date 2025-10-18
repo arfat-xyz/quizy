@@ -6,6 +6,7 @@ import {
   Frame,
   LifeBuoy,
   Map,
+  PaperclipIcon,
   PieChart,
   SettingsIcon,
   User2,
@@ -54,6 +55,11 @@ const staticData = {
       title: "Quiz",
       url: "/dashboard/quiz",
       icon: CircleQuestionMark,
+    },
+    {
+      title: "Test",
+      url: "/dashboard/test",
+      icon: PaperclipIcon,
     },
   ],
   navSecondary: [
