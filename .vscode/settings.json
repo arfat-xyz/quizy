@@ -1,0 +1,145 @@
+{
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook"
+  },
+  "editor.suggestSelection": "first",
+  "editor.multiCursorModifier": "ctrlCmd",
+  "liveServer.settings.donotShowInfoMsg": true,
+  "terminal.integrated.tabs.enabled": true,
+  "git.autofetch": true,
+  "python.defaultInterpreterPath": "/usr/local/bin/python3",
+  "liveServer.settings.donotVerifyTags": true,
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter-notebook": "left"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.linkedEditing": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[blade]": {
+    "editor.defaultFormatter": "shufo.vscode-blade-formatter"
+  },
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.cursorBlinking": "expand",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorWidth": 5,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnType": true,
+  "editor.tabSize": 2,
+  "editor.fontFamily": "'Cascadia Code','Space Grotesk', 'Droid Sans Mono', 'monospace', monospace",
+  "editor.cursorStyle": "line-thin",
+  "editor.cursorSurroundingLines": 1,
+  "terminal.integrated.cursorWidth": 3,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.python",
+    "editor.formatOnType": true
+  },
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "liveServer.settings.ChromeDebuggingAttachment": false,
+  "explorer.confirmDelete": false,
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "editor.inlayHints.fontFamily": "'Cascadia Code'",
+  "editor.codeLensFontFamily": "'Cascadia Code'",
+  "gitlens.defaultDateLocale": null,
+  "editor.fontLigatures": true,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": [
+          //following will be in italic
+          "comment",
+          "entity.name.type.class", //class names
+          "constant", //String, Number, Boolean…, this, super
+          "storage.modifier", //static keyword
+          "storage.type.class.js", //class keyword
+          "keyword" //import, export, return…
+        ],
+        "settings": {
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": [
+          //following will be excluded from italics (VSCode has some defaults for italics)
+          "invalid",
+          "keyword.operator",
+          "constant.numeric.css",
+          "keyword.other.unit.px.css",
+          "constant.numeric.decimal.js",
+          "constant.numeric.json"
+        ],
+        "settings": {
+          "fontStyle": ""
+        }
+      }
+    ]
+  },
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "workbench.preferredHighContrastColorTheme": "Default Dark+",
+  "workbench.preferredHighContrastLightColorTheme": "Default Dark+",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "jupyter.interactiveWindow.creationMode": "perFile",
+  "editor.minimap.renderCharacters": false,
+  "editor.indentSize": "tabSize",
+  "editor.accessibilitySupport": "off",
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "git.openRepositoryInParentFolders": "always",
+  "editor.stickyScroll.enabled": false,
+  "workbench.iconTheme": "material-icon-theme",
+  "html.completion.attributeDefaultValue": "singlequotes",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "explorer.confirmPasteNative": false,
+  "workbench.editor.empty.hint": "hidden",
+  "diffEditor.codeLens": true,
+  "editor.fontSize": 18,
+  "chat.instructionsFilesLocations": {
+    ".github/instructions": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-collections-post-response.instructions.md": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-collections-pre-request.instructions.md": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-folder-post-response.instructions.md": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-folder-pre-request.instructions.md": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-http-request-post-response.instructions.md": true,
+    "C:\\Users\\mdsaj\\AppData\\Local\\Temp\\postman-http-request-pre-request.instructions.md": true
+  },
+  "markdown.suggest.paths.includeWorkspaceHeaderCompletions": "onSingleOrDoubleHash",
+  "[cpp]": {
+    "editor.wordBasedSuggestions": "off",
+    "editor.semanticHighlighting.enabled": true,
+    "editor.stickyScroll.defaultModel": "foldingProviderModel",
+    "editor.suggest.insertMode": "replace"
+  },
+  "code-runner.runInTerminal": true,
+  "terminal.integrated.focusAfterRun": "terminal",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.preferences.importModuleSpecifier": "non-relative"
+}
