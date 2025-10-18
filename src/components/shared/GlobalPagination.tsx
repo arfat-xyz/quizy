@@ -16,14 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRouter } from "next/navigation";
 
 interface GlobalPaginationProps {
   currentPage: number;
   totalPages: number;
   limit: number;
   limits?: number[];
-  onPageChange: (page: number) => void;
-  onLimitChange: (limit: number) => void;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
   updateUrl?: boolean;
 }
 
@@ -37,30 +38,56 @@ const GlobalPagination: React.FC<GlobalPaginationProps> = ({
   updateUrl = true,
 }) => {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   // Update URL when page or limit changes
-  useEffect(() => {
+  const updateUrlParams = (page: number, newLimit: number) => {
     if (!mounted || !updateUrl) return;
 
     const url = new URL(window.location.href);
-    url.searchParams.set("page", currentPage.toString());
-    url.searchParams.set("limit", limit.toString());
-    window.history.pushState({}, "", url.toString());
-  }, [currentPage, limit, updateUrl, mounted]);
+    url.searchParams.set("page", page.toString());
+    url.searchParams.set("limit", newLimit.toString());
+
+    // Use Next.js router for navigation to trigger page refresh/re-render
+    router.push(url.toString());
+  };
 
   const handleLimitChange = (value: string) => {
     const newLimit = parseInt(value, 10);
-    onLimitChange(newLimit);
-    onPageChange(1); // Reset to page 1 when limit changes
+
+    // Update URL immediately
+    if (updateUrl) {
+      updateUrlParams(1, newLimit);
+    }
+
+    // Call callback if provided
+    if (onLimitChange) {
+      onLimitChange(newLimit);
+    } else if (updateUrl) {
+      // If no callback provided but URL update is enabled, the page will refresh with new params
+      // Parent component should read from URL on mount
+    }
   };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
-    onPageChange(page);
+
+    // Update URL immediately
+    if (updateUrl) {
+      updateUrlParams(page, limit);
+    }
+
+    // Call callback if provided
+    if (onPageChange) {
+      onPageChange(page);
+    } else if (updateUrl) {
+      // If no callback provided but URL update is enabled, the page will refresh with new params
+      // Parent component should read from URL on mount
+    }
   };
 
   // Generate page numbers to display

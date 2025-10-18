@@ -1,238 +1,298 @@
-// "use client";
-// import React from "react";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Group, Question, QuestionType, Choice } from "@prisma/client";
+"use client";
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Group, Question, QuestionType, Choice } from "@prisma/client";
+import GlobalPagination from "@/components/shared/GlobalPagination";
 
-// interface QuizTableProps {
-//   quizzes: (Question & {
-//     group: Group;
-//     choices: Choice[];
-//   })[];
-//   currentPage: number;
-//   totalPages: number;
-//   totalCount: number;
-// }
+interface QuizTableProps {
+  quizzes: (Question & {
+    group: Group;
+    choices: Choice[];
+  })[];
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  onEdit?: (quiz: Question & { group: Group; choices: Choice[] }) => void;
+  onDelete?: (quizId: string) => void;
+}
 
-// const QuizTable = ({
-//   quizzes,
-//   currentPage,
-//   totalPages,
-//   totalCount,
-// }: QuizTableProps) => {
-//   const getQuestionTypeLabel = (type: QuestionType) => {
-//     switch (type) {
-//       case QuestionType.MCQ:
-//         return "Multiple Choice";
-//       case QuestionType.TEXT:
-//         return "Text Answer";
-//       default:
-//         return type;
-//     }
-//   };
+const QuizTable = ({
+  quizzes,
+  currentPage,
+  totalPages,
+  totalCount,
+  limit,
+  onEdit,
+  onDelete,
+}: QuizTableProps) => {
+  const getQuestionTypeLabel = (type: QuestionType) => {
+    switch (type) {
+      case QuestionType.MCQ:
+        return "Multiple Choice";
+      case QuestionType.TEXT:
+        return "Text Answer";
+      default:
+        return type;
+    }
+  };
 
-//   const getQuestionTypeVariant = (type: QuestionType) => {
-//     switch (type) {
-//       case QuestionType.MCQ:
-//         return "secondary";
-//       case QuestionType.TEXT:
-//         return "default";
-//       default:
-//         return "outline";
-//     }
-//   };
+  const getQuestionTypeVariant = (type: QuestionType) => {
+    switch (type) {
+      case QuestionType.MCQ:
+        return "secondary";
+      case QuestionType.TEXT:
+        return "default";
+      default:
+        return "outline";
+    }
+  };
 
-//   const getCorrectAnswer = (question: Question & { choices: Choice[] }) => {
-//     if (question.type === QuestionType.TEXT) {
-//       return "Text Answer";
-//     }
+  const getCorrectAnswer = (question: Question & { choices: Choice[] }) => {
+    if (question.type === QuestionType.TEXT) {
+      return "Text Answer";
+    }
 
-//     if (question.type === QuestionType.MCQ && question.correct !== undefined) {
-//       const correctChoice = question.choices.find(
-//         choice => choice.index === question.correct,
-//       );
-//       return correctChoice ? correctChoice.text : "No correct answer set";
-//     }
+    if (question.type === QuestionType.MCQ && question.correct.length > 0) {
+      // Handle multiple correct answers
+      const correctChoices = question.choices
+        .filter(choice => question.correct.includes(choice.index))
+        .map(choice => choice.text);
 
-//     return "No correct answer set";
-//   };
+      if (correctChoices.length === 0) {
+        return "No correct answer set";
+      }
 
-//   const truncateText = (text: string, maxLength: number = 50) => {
-//     if (text.length <= maxLength) return text;
-//     return text.substring(0, maxLength) + "...";
-//   };
+      if (correctChoices.length === 1) {
+        return correctChoices[0];
+      }
 
-//   if (!quizzes || quizzes.length === 0) {
-//     return (
-//       <div className="rounded-lg border p-8 text-center">
-//         <p className="text-muted-foreground">
-//           No quizzes found. Create your first quiz to get started.
-//         </p>
-//       </div>
-//     );
-//   }
+      // For multiple correct answers, show count or first few
+      if (correctChoices.length <= 2) {
+        return correctChoices.join(", ");
+      }
 
-//   return (
-//     <div className="space-y-4">
-//       {/* Table Header with Stats */}
-//       <div className="flex items-center justify-between">
-//         <div>
-//           <h2 className="text-2xl font-bold tracking-tight">Quizzes</h2>
-//           <p className="text-muted-foreground">
-//             Showing {quizzes.length} of {totalCount} questions
-//           </p>
-//         </div>
-//         <div className="flex items-center space-x-2">
-//           <Button variant="outline" disabled={currentPage <= 1}>
-//             Previous
-//           </Button>
-//           <span className="text-muted-foreground text-sm">
-//             Page {currentPage} of {totalPages}
-//           </span>
-//           <Button variant="outline" disabled={currentPage >= totalPages}>
-//             Next
-//           </Button>
-//         </div>
-//       </div>
+      return `${correctChoices.length} correct answers`;
+    }
 
-//       {/* Quiz Table */}
-//       <div className="rounded-lg border">
-//         <Table>
-//           <TableHeader>
-//             <TableRow>
-//               <TableHead>Question</TableHead>
-//               <TableHead>Group</TableHead>
-//               <TableHead>Type</TableHead>
-//               <TableHead>Score</TableHead>
-//               <TableHead>Correct Answer</TableHead>
-//               <TableHead>Choices</TableHead>
-//               <TableHead className="text-right">Actions</TableHead>
-//             </TableRow>
-//           </TableHeader>
-//           <TableBody>
-//             {quizzes.map(quiz => (
-//               <TableRow key={quiz.id}>
-//                 <TableCell className="font-medium">
-//                   <div className="max-w-xs">{truncateText(quiz.text)}</div>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Badge variant="outline">{quiz.group.name}</Badge>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Badge variant={getQuestionTypeVariant(quiz.type)}>
-//                     {getQuestionTypeLabel(quiz.type)}
-//                   </Badge>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Badge variant="secondary">
-//                     {quiz.score} point{quiz.score !== 1 ? "s" : ""}
-//                   </Badge>
-//                 </TableCell>
-//                 <TableCell className="max-w-xs">
-//                   <div className="text-muted-foreground text-sm">
-//                     {truncateText(getCorrectAnswer(quiz))}
-//                   </div>
-//                 </TableCell>
-//                 <TableCell>
-//                   {quiz.type === QuestionType.MCQ ? (
-//                     <span className="text-muted-foreground text-sm">
-//                       {quiz.choices.length} choices
-//                     </span>
-//                   ) : (
-//                     <span className="text-muted-foreground text-sm">-</span>
-//                   )}
-//                 </TableCell>
-//                 <TableCell className="text-right">
-//                   <div className="flex justify-end space-x-2">
-//                     <Button
-//                       variant="outline"
-//                       size="sm"
-//                       // onClick={() => onEdit?.(quiz)}
-//                     >
-//                       Edit
-//                     </Button>
-//                     <Button
-//                       variant="destructive"
-//                       size="sm"
-//                       // onClick={() => onDelete?.(quiz.id)}
-//                     >
-//                       Delete
-//                     </Button>
-//                   </div>
-//                 </TableCell>
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </div>
+    return "No correct answer set";
+  };
 
-//       {/* Mobile Cards View */}
-//       <div className="space-y-4 lg:hidden">
-//         {quizzes.map(quiz => (
-//           <div key={quiz.id} className="space-y-3 rounded-lg border p-4">
-//             <div className="flex items-start justify-between">
-//               <div className="flex-1 space-y-2">
-//                 <h3 className="font-semibold">
-//                   {truncateText(quiz.text, 100)}
-//                 </h3>
-//                 <div className="flex flex-wrap gap-2">
-//                   <Badge variant="outline">{quiz.group.name}</Badge>
-//                   <Badge variant={getQuestionTypeVariant(quiz.type)}>
-//                     {getQuestionTypeLabel(quiz.type)}
-//                   </Badge>
-//                   <Badge variant="secondary">
-//                     {quiz.score} point{quiz.score !== 1 ? "s" : ""}
-//                   </Badge>
-//                 </div>
-//               </div>
-//             </div>
+  const truncateText = (text: string, maxLength: number = 50) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
 
-//             <div className="space-y-1 text-sm">
-//               <div>
-//                 <span className="font-medium">Correct Answer: </span>
-//                 <span className="text-muted-foreground">
-//                   {truncateText(getCorrectAnswer(quiz), 80)}
-//                 </span>
-//               </div>
-//               {quiz.type === QuestionType.MCQ && (
-//                 <div>
-//                   <span className="font-medium">Choices: </span>
-//                   <span className="text-muted-foreground">
-//                     {quiz.choices.length} options
-//                   </span>
-//                 </div>
-//               )}
-//             </div>
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-//             <div className="flex justify-end space-x-2 pt-2">
-//               <Button
-//                 variant="outline"
-//                 size="sm"
-//                 // onClick={() => onEdit?.(quiz)}
-//               >
-//                 Edit
-//               </Button>
-//               <Button
-//                 variant="destructive"
-//                 size="sm"
-//                 // onClick={() => onDelete?.(quiz.id)}
-//               >
-//                 Delete
-//               </Button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
+  if (!quizzes || quizzes.length === 0) {
+    return (
+      <div className="rounded-lg border p-8 text-center">
+        <p className="text-muted-foreground">
+          No quizzes found. Create your first quiz to get started.
+        </p>
+      </div>
+    );
+  }
 
-// export default QuizTable;
+  return (
+    <div className="space-y-6">
+      {/* Table Header with Stats */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Questions</h2>
+          <p className="text-muted-foreground">
+            Showing {(currentPage - 1) * limit + 1} to{" "}
+            {Math.min(currentPage * limit, totalCount)} of {totalCount}{" "}
+            questions
+          </p>
+        </div>
+      </div>
+
+      {/* Quiz Table */}
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Question</TableHead>
+              <TableHead>Group</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Score</TableHead>
+              <TableHead>Correct Answers</TableHead>
+              <TableHead>Choices</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {quizzes.map(quiz => (
+              <TableRow key={quiz.id}>
+                <TableCell className="font-medium">
+                  <div className="max-w-xs">{truncateText(quiz.text)}</div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{quiz.group.name}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getQuestionTypeVariant(quiz.type)}>
+                    {getQuestionTypeLabel(quiz.type)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary">
+                    {quiz.score} point{quiz.score !== 1 ? "s" : ""}
+                  </Badge>
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  <div className="text-muted-foreground text-sm">
+                    {quiz.type === QuestionType.MCQ ? (
+                      <div className="space-y-1">
+                        <span>{getCorrectAnswer(quiz)}</span>
+                        {quiz.correct.length > 1 && (
+                          <div className="text-xs text-blue-600">
+                            ({quiz.correct.length} selected)
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span>-</span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {quiz.type === QuestionType.MCQ ? (
+                    <span className="text-muted-foreground text-sm">
+                      {quiz.choices.length} options
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <span className="text-muted-foreground text-sm">
+                    {formatDate(quiz.createdAt)}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit?.(quiz)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => onDelete?.(quiz.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile Cards View */}
+      <div className="space-y-4 lg:hidden">
+        {quizzes.map(quiz => (
+          <div key={quiz.id} className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-2">
+                <h3 className="font-semibold">
+                  {truncateText(quiz.text, 100)}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">{quiz.group.name}</Badge>
+                  <Badge variant={getQuestionTypeVariant(quiz.type)}>
+                    {getQuestionTypeLabel(quiz.type)}
+                  </Badge>
+                  <Badge variant="secondary">
+                    {quiz.score} point{quiz.score !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium">Correct Answers: </span>
+                <span className="text-muted-foreground">
+                  {getCorrectAnswer(quiz)}
+                </span>
+                {quiz.type === QuestionType.MCQ && quiz.correct.length > 1 && (
+                  <span className="ml-1 text-xs text-blue-600">
+                    ({quiz.correct.length} selected)
+                  </span>
+                )}
+              </div>
+
+              {quiz.type === QuestionType.MCQ && (
+                <div>
+                  <span className="font-medium">Choices: </span>
+                  <span className="text-muted-foreground">
+                    {quiz.choices.length} options
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <span className="font-medium">Created: </span>
+                <span className="text-muted-foreground">
+                  {formatDate(quiz.createdAt)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit?.(quiz)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onDelete?.(quiz.id)}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Global Pagination */}
+      <GlobalPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        limit={limit}
+        limits={[1, 2, 3, 4, 10, 25, 50, 100]}
+        updateUrl={true}
+      />
+    </div>
+  );
+};
+
+export default QuizTable;

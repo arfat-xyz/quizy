@@ -1,5 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -10,79 +13,139 @@ import {
 import { Button } from "@/components/ui/button";
 import { Group, QuestionType } from "@prisma/client";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-interface Choice {
-  text: string;
-  index: number;
-}
+// Zod schemas
+const choiceSchema = z.object({
+  text: z.string().min(1, "Choice text is required"),
+  index: z.number(),
+});
 
-interface Question {
-  text: string;
-  type: QuestionType;
-  score: number;
-  correct: number[]; // Now an array for multiple correct answers
-  choices: Choice[];
-}
-
-const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-  const [questions, setQuestions] = useState<Question[]>([
+const questionSchema = z
+  .object({
+    text: z.string().min(1, "Question text is required"),
+    type: z.nativeEnum(QuestionType),
+    score: z.number().min(1, "Score must be at least 1"),
+    correct: z.array(z.number()),
+    choices: z.array(choiceSchema),
+  })
+  .refine(
+    data => {
+      if (data.type === QuestionType.MCQ) {
+        return data.choices.length >= 2;
+      }
+      return true;
+    },
     {
+      message: "MCQ questions must have at least 2 choices",
+      path: ["choices"],
+    },
+  )
+  .refine(
+    data => {
+      if (data.type === QuestionType.MCQ) {
+        return data.correct.length >= 1;
+      }
+      return true;
+    },
+    {
+      message: "MCQ questions must have at least one correct answer",
+      path: ["correct"],
+    },
+  );
+
+const formSchema = z.object({
+  groupId: z.string().min(1, "Please select a group"),
+  questions: z
+    .array(questionSchema)
+    .min(1, "At least one question is required"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface AddQuizProps {
+  allGroups: Group[];
+}
+
+const AddQuiz = ({ allGroups }: AddQuizProps) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const router = useRouter();
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    trigger,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      groupId: "",
+      questions: [
+        {
+          text: "",
+          type: QuestionType.MCQ,
+          score: 1,
+          correct: [],
+          choices: [{ text: "", index: 0 }],
+        },
+      ],
+    },
+  });
+
+  const {
+    fields: questionFields,
+    append: appendQuestion,
+    remove: removeQuestion,
+  } = useFieldArray({
+    control,
+    name: "questions",
+  });
+
+  const watchQuestions = watch("questions");
+
+  const addQuestion = () => {
+    appendQuestion({
       text: "",
       type: QuestionType.MCQ,
       score: 1,
-      correct: [], // Start with empty array
+      correct: [],
       choices: [{ text: "", index: 0 }],
-    },
-  ]);
-
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        text: "",
-        type: QuestionType.MCQ,
-        score: 1,
-        correct: [],
-        choices: [{ text: "", index: 0 }],
-      },
-    ]);
+    });
   };
 
-  const removeQuestion = (index: number) => {
-    setQuestions(questions.filter((_, i) => i !== index));
-  };
+  const updateQuestionType = async (
+    questionIndex: number,
+    newType: QuestionType,
+  ) => {
+    setValue(`questions.${questionIndex}.type`, newType);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateQuestion = (index: number, field: keyof Question, value: any) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
-
-    // If changing to TEXT type, clear choices and correct answers
-    if (field === "type" && value === QuestionType.TEXT) {
-      updatedQuestions[index].choices = [];
-      updatedQuestions[index].correct = [];
+    if (newType === QuestionType.TEXT) {
+      setValue(`questions.${questionIndex}.choices`, []);
+      setValue(`questions.${questionIndex}.correct`, []);
+    } else if (newType === QuestionType.MCQ) {
+      const currentChoices = watchQuestions[questionIndex]?.choices;
+      if (!currentChoices || currentChoices.length === 0) {
+        setValue(`questions.${questionIndex}.choices`, [
+          { text: "", index: 0 },
+        ]);
+      }
+      setValue(`questions.${questionIndex}.correct`, []);
     }
 
-    // If changing to MCQ type and no choices, add one default choice
-    if (
-      field === "type" &&
-      value === QuestionType.MCQ &&
-      updatedQuestions[index].choices.length === 0
-    ) {
-      updatedQuestions[index].choices = [{ text: "", index: 0 }];
-      updatedQuestions[index].correct = [];
-    }
-
-    setQuestions(updatedQuestions);
+    await trigger(`questions.${questionIndex}`);
   };
 
+  // Manage choices manually per question using watch/setValue to avoid
+  // nesting useFieldArray incorrectly. This keeps types safe and avoids any.
   const addChoice = (questionIndex: number) => {
-    const updatedQuestions = [...questions];
-    const newIndex = updatedQuestions[questionIndex].choices.length;
-    updatedQuestions[questionIndex].choices.push({ text: "", index: newIndex });
-    setQuestions(updatedQuestions);
+    const currentChoices = watchQuestions[questionIndex]?.choices || [];
+    const newIndex = currentChoices.length;
+
+    const newChoices = [...currentChoices, { text: "", index: newIndex }];
+    setValue(`questions.${questionIndex}.choices`, newChoices);
   };
 
   const updateChoice = (
@@ -90,103 +153,60 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
     choiceIndex: number,
     text: string,
   ) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[questionIndex].choices[choiceIndex].text = text;
-    setQuestions(updatedQuestions);
+    setValue(`questions.${questionIndex}.choices.${choiceIndex}.text`, text);
   };
 
-  const removeChoice = (questionIndex: number, choiceIndex: number) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[questionIndex].choices = updatedQuestions[
-      questionIndex
-    ].choices.filter((_, index) => index !== choiceIndex);
+  const handleRemoveChoice = (questionIndex: number, choiceIndex: number) => {
+    const currentChoices = watchQuestions[questionIndex]?.choices || [];
 
-    // Reindex choices
-    updatedQuestions[questionIndex].choices.forEach((choice, index) => {
-      choice.index = index;
-    });
+    if (currentChoices.length <= 1) {
+      toast.error("At least one choice is required");
+      return;
+    }
 
-    // Remove the deleted choice from correct answers and adjust indexes
-    const updatedCorrect = updatedQuestions[questionIndex].correct
+    // Reindex remaining choices after removal
+    const updatedChoices = currentChoices
+      .filter((_, index) => index !== choiceIndex)
+      .map((choice, index) => ({ ...choice, index }));
+
+    setValue(`questions.${questionIndex}.choices`, updatedChoices);
+
+    // Update correct answers
+    const currentCorrect = watchQuestions[questionIndex]?.correct || [];
+    const updatedCorrect = currentCorrect
       .filter(correctIndex => correctIndex !== choiceIndex)
       .map(correctIndex =>
         correctIndex > choiceIndex ? correctIndex - 1 : correctIndex,
       );
 
-    updatedQuestions[questionIndex].correct = updatedCorrect;
-
-    setQuestions(updatedQuestions);
+    setValue(`questions.${questionIndex}.correct`, updatedCorrect);
   };
 
   const toggleCorrectAnswer = (questionIndex: number, choiceIndex: number) => {
-    const updatedQuestions = [...questions];
-    const currentCorrect = updatedQuestions[questionIndex].correct;
+    const currentCorrect = watchQuestions[questionIndex]?.correct || [];
+    let updatedCorrect: number[];
 
     if (currentCorrect.includes(choiceIndex)) {
-      // Remove from correct answers
-      updatedQuestions[questionIndex].correct = currentCorrect.filter(
-        index => index !== choiceIndex,
-      );
+      updatedCorrect = currentCorrect.filter(index => index !== choiceIndex);
     } else {
-      // Add to correct answers
-      updatedQuestions[questionIndex].correct = [
-        ...currentCorrect,
-        choiceIndex,
-      ];
+      updatedCorrect = [...currentCorrect, choiceIndex];
     }
 
-    setQuestions(updatedQuestions);
+    setValue(`questions.${questionIndex}.correct`, updatedCorrect);
   };
 
-  const handleSubmit = async () => {
-    if (!selectedGroup) {
-      toast.error("Please select a group");
-      return;
-    }
-
-    // Validate questions
-    for (const [index, question] of questions.entries()) {
-      if (!question.text.trim()) {
-        toast.error(`Question ${index + 1} text is required`);
-        return;
-      }
-
-      if (question.type === QuestionType.MCQ) {
-        if (question.choices.length < 2) {
-          toast.error(`Question ${index + 1} must have at least 2 choices`);
-          return;
-        }
-
-        // Check if all choices have text
-        for (const [choiceIndex, choice] of question.choices.entries()) {
-          if (!choice.text.trim()) {
-            toast.error(
-              `Question ${index + 1}, Choice ${choiceIndex + 1} text is required`,
-            );
-            return;
-          }
-        }
-
-        // Check if at least one correct answer is selected
-        if (question.correct.length === 0) {
-          toast.error(
-            `Question ${index + 1} must have at least one correct answer`,
-          );
-          return;
-        }
-      }
-    }
-    console.log("Questions:", questions);
-
+  const onSubmit = async (data: FormValues) => {
     try {
+      console.log("Submitting data:", data);
+
       const response = await fetch("/api/admin/create-quiz", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          groupId: selectedGroup,
-          questions: questions,
+          groupId: data.groupId,
+          questions: data.questions,
         }),
       });
 
@@ -194,18 +214,9 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
         const result = await response.json();
         console.log("Quiz created:", result);
         toast.success("Quiz created successfully!");
+        router.refresh();
         setIsOpen(false);
-        // Reset form
-        setSelectedGroup("");
-        setQuestions([
-          {
-            text: "",
-            type: QuestionType.MCQ,
-            score: 1,
-            correct: [],
-            choices: [{ text: "", index: 0 }],
-          },
-        ]);
+        reset();
       } else {
         throw new Error("Failed to create quiz");
       }
@@ -215,10 +226,17 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      reset();
+    }
+  };
+
   return (
     <div>
       <Button onClick={() => setIsOpen(true)}>Add Quiz</Button>
-      <Dialog onOpenChange={setIsOpen} open={isOpen}>
+      <Dialog onOpenChange={handleOpenChange} open={isOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Quiz</DialogTitle>
@@ -228,15 +246,14 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Group Selection */}
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Group Selection */}
             <div>
               <label className="mb-2 block text-sm font-medium">
                 Select Group
               </label>
               <select
-                value={selectedGroup}
-                onChange={e => setSelectedGroup(e.target.value)}
+                {...register("groupId")}
                 className="w-full rounded-md border p-2"
               >
                 <option value="">Choose a group</option>
@@ -246,26 +263,30 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                   </option>
                 ))}
               </select>
+              {errors.groupId && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.groupId.message}
+                </p>
+              )}
             </div>
 
             {/* Questions */}
-            {questions.map((question, questionIndex) => (
-              <div
-                key={questionIndex}
-                className="space-y-4 rounded-lg border p-4"
-              >
+            {questionFields.map((field, questionIndex) => (
+              <div key={field.id} className="space-y-4 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">
                     Question {questionIndex + 1}
                   </h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeQuestion(questionIndex)}
-                  >
-                    Remove
-                  </Button>
+                  {questionFields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeQuestion(questionIndex)}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
 
                 {/* Question Text */}
@@ -274,14 +295,15 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                     Question Text
                   </label>
                   <input
-                    type="text"
-                    value={question.text}
-                    onChange={e =>
-                      updateQuestion(questionIndex, "text", e.target.value)
-                    }
+                    {...register(`questions.${questionIndex}.text`)}
                     className="w-full rounded-md border p-2"
                     placeholder="Enter your question"
                   />
+                  {errors.questions?.[questionIndex]?.text && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.questions[questionIndex]?.text?.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Question Type */}
@@ -290,9 +312,14 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                     Question Type
                   </label>
                   <select
-                    value={question.type}
+                    value={
+                      watchQuestions[questionIndex]?.type || QuestionType.MCQ
+                    }
                     onChange={e =>
-                      updateQuestion(questionIndex, "type", e.target.value)
+                      updateQuestionType(
+                        questionIndex,
+                        e.target.value as QuestionType,
+                      )
                     }
                     className="w-full rounded-md border p-2"
                   >
@@ -310,21 +337,21 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                   </label>
                   <input
                     type="number"
-                    value={question.score}
-                    onChange={e =>
-                      updateQuestion(
-                        questionIndex,
-                        "score",
-                        parseInt(e.target.value),
-                      )
-                    }
+                    {...register(`questions.${questionIndex}.score`, {
+                      valueAsNumber: true,
+                    })}
                     className="w-full rounded-md border p-2"
                     min="1"
                   />
+                  {errors.questions?.[questionIndex]?.score && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.questions[questionIndex]?.score?.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* MCQ Choices */}
-                {question.type === QuestionType.MCQ && (
+                {watchQuestions[questionIndex]?.type === QuestionType.MCQ && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="block text-sm font-medium">
@@ -341,50 +368,71 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
                     </div>
 
                     <div className="text-sm font-medium text-gray-700">
-                      Select all correct answers ({question.correct.length}{" "}
+                      Select all correct answers (
+                      {watchQuestions[questionIndex]?.correct?.length || 0}{" "}
                       selected)
                     </div>
 
-                    {question.choices.map((choice, choiceIndex) => (
-                      <div
-                        key={choiceIndex}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={question.correct.includes(choiceIndex)}
-                          onChange={() =>
-                            toggleCorrectAnswer(questionIndex, choiceIndex)
-                          }
-                          className="mr-2"
-                        />
-                        <input
-                          type="text"
-                          value={choice.text}
-                          onChange={e =>
-                            updateChoice(
-                              questionIndex,
-                              choiceIndex,
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 rounded-md border p-2"
-                          placeholder={`Choice ${choiceIndex + 1}`}
-                        />
-                        {question.choices.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              removeChoice(questionIndex, choiceIndex)
+                    {watchQuestions[questionIndex]?.choices?.map(
+                      (choice, choiceIndex) => (
+                        <div
+                          key={choiceIndex}
+                          className="flex items-center space-x-2"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              watchQuestions[questionIndex]?.correct?.includes(
+                                choiceIndex,
+                              ) || false
                             }
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                            onChange={() =>
+                              toggleCorrectAnswer(questionIndex, choiceIndex)
+                            }
+                            className="mr-2"
+                          />
+                          <input
+                            type="text"
+                            value={choice.text}
+                            onChange={e =>
+                              updateChoice(
+                                questionIndex,
+                                choiceIndex,
+                                e.target.value,
+                              )
+                            }
+                            className="flex-1 rounded-md border p-2"
+                            placeholder={`Choice ${choiceIndex + 1}`}
+                          />
+                          {watchQuestions[questionIndex]?.choices &&
+                            watchQuestions[questionIndex].choices.length >
+                              1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveChoice(questionIndex, choiceIndex)
+                                }
+                              >
+                                Remove
+                              </Button>
+                            )}
+                        </div>
+                      ),
+                    )}
+
+                    {/* Choice validation errors */}
+                    {errors.questions?.[questionIndex]?.choices && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.questions[questionIndex]?.choices?.message}
+                      </p>
+                    )}
+                    {errors.questions?.[questionIndex]?.correct && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.questions[questionIndex]?.correct?.message}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -404,11 +452,11 @@ const AddQuiz = ({ allGroups }: { allGroups: Group[] }) => {
               >
                 Cancel
               </Button>
-              <Button type="button" onClick={handleSubmit}>
-                Create Quiz
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Quiz"}
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

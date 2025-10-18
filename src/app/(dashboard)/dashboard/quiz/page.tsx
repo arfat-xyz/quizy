@@ -38,7 +38,6 @@ const QuizPage = async ({
   ]);
 
   const totalPages = Math.ceil(totalCount / limit);
-
   return (
     <>
       {" "}
@@ -47,6 +46,7 @@ const QuizPage = async ({
         allPositions={allPositions}
         allGroups={allGroups}
         currentPage={page}
+        limit={limit}
         totalPages={totalPages}
         totalCount={totalCount}
       />
