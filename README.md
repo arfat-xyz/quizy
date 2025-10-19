@@ -57,6 +57,39 @@ See `package.json` for full dependency list.
 - `prisma/schema.prisma` - Prisma schema (MongoDB models)
 - `public` - Static assets
 
+## Pages & Features (route -> what it does)
+
+Below is a concise map of the main App Router pages and what feature each
+provides. Use this to find where UI/logic lives when making changes.
+
+- `/(home)/page` — Public home page; shows available tests and public info.
+- `/(home)/auth/login/page` — Login page (email/password + OAuth via NextAuth
+  where configured).
+- `/(home)/auth/register/page` — Registration page (creates account and sends
+  verification email).
+- `/(home)/auth/forget-password/page` — Forgot password form (requests password
+  reset link).
+- `/(home)/auth/reset-password/page` — Reset password page (set new password
+  using token from email).
+- `/(home)/verify-email/page` — Email verification landing page (token-based
+  verification).
+- `/test/[id]/page` — Test detail / test-taking flow for assigned trainees
+  (starts a session, shows questions).
+
+- `/(dashboard)/dashboard/page` — Admin dashboard overview (requires ADMIN
+  role).
+- `/(dashboard)/dashboard/quiz/page` — Quiz/Test management (create/edit tests,
+  add groups).
+- `/(dashboard)/dashboard/test/page` — Tests listing and assigned test overview.
+- `/(dashboard)/dashboard/review-test/[id]/page` — Review & score a trainee's
+  submitted answers (manual scoring and status update).
+- `/(dashboard)/dashboard/trainee/page` — Trainee management (create trainees,
+  list users, assign roles).
+
+Note: most of the admin actions call internal API routes under
+`src/app/api/admin/*` which contain the server-side logic and triggers (see
+Emails & Triggers section).
+
 ## Environment variables
 
 The application validates the environment variables in `src/lib/envs.ts`. The
@@ -72,6 +105,62 @@ following variables are required:
 - `GMAIL_EMAIL` - Gmail address used by Nodemailer (if using Gmail)
 - `GMAIL_PASSWORD` - App password for the Gmail account
 - `NODEMAILER_FROM` - Sender address used in outgoing emails
+
+## Emails & Triggers
+
+This application uses Nodemailer via `src/lib/mail.ts` and HTML templates in
+`src/lib/email-template-generator.ts`. The following emails are implemented and
+the places that trigger them are listed here.
+
+- Verification email
+  - Template: `generateVerificationEmail(actionLink)`
+  - Triggered from: `src/actions/register.ts` (user self-registration); also
+    re-sent when an unverified user attempts to register again.
+  - When/why: Sent after successful registration to verify the user's email.
+
+- Password reset email
+  - Template: `generatePasswordResetEmail(actionLink)`
+  - Triggered from: `src/app/api/forgot-password/route.ts` (POST)
+  - When/why: Sent when a user requests a password reset via the forgot password
+    form. The email contains a tokenized link (expires via token generation
+    logic).
+
+- Welcome email
+  - Template: `generateWelcomeEmail(username, email)`
+  - Triggered from: `src/app/api/admin/create-trainee/route.ts` and
+    `src/app/api/admin/send-trainee-email/route.ts` (admin-created trainees or
+    explicit send-welcome action)
+  - When/why: Sent when an admin creates a trainee account or manually sends a
+    trainee email; it contains login guidance and links to login/reset.
+
+- Test assignment email
+  - Template: `generateTestAssignmentEmail(...)`
+  - Triggered from: `src/app/api/admin/test/route.ts` when creating a test with
+    assigned users (the API will create AssignedTest rows and then send
+    assignment emails). Also triggered implicitly when creating an AssignedTest
+    via other admin flows that call the same API.
+  - When/why: Sent to trainees who are assigned to a test; includes test details
+    and link to the test page.
+
+- Decision/result email
+  - Template: `generateDecisionEmail(...)`
+  - Triggered from: `src/app/api/admin/update-assigned-test/route.ts` when an
+    admin updates an assigned test's status to `accepted`, `rejected`, or
+    `pending`.
+  - When/why: Notifies candidate of the decision after manual review.
+
+Implementation notes:
+
+- Mail transport: `src/lib/mail.ts` uses Gmail service with `GMAIL_EMAIL` and
+  `GMAIL_PASSWORD` from env. If you want to use a different provider (SendGrid,
+  Mailgun, SES), replace the transporter creation in that file.
+- Template generation: All HTML templates live in
+  `src/lib/email-template-generator.ts`.
+- Bulk send: `sendEmailViaNodemailerMany` is used for batch assignment emails
+  (sends one email with multiple recipients).
+
+Security note: always use an app password for the Gmail account (or a dedicated
+transactional email provider) and never commit `.env`.
 
 Create a `.env` file (copy `.env.example` or create from scratch) and populate
 these values before running the app.
